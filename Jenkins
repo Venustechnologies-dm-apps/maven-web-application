@@ -1,0 +1,41 @@
+node
+{
+    def mavenHome = tool name: "maven 3.8.4"
+
+ stage('Checkoutcode')
+ {
+   git branch: 'development', credentialsId: '614357f1-5588-40df-b15a-a15bf1c6c484', url: 'https://github.com/Venustechnologies-dm-apps/maven-web-application.git'
+ }
+ 
+ stage('Build')
+ {
+  sh "${mavenHome}/bin/mvn clean package"
+ }
+ 
+ stage('ExecuteSonarQubeReport')
+ {
+  sh "${mavenHome}/bin/mvn sonar:sonar"
+ }
+ 
+  stage('UploadArtfactIntoNexus')
+ {
+  sh "${mavenHome}/bin/mvn deploy"
+ }
+ 
+ stage('DeployAppIntoTomcat')
+ {
+     sshagent(['e47338d8-d524-4a8a-82f8-a36aeeb0efd8']) 
+     {sh "scp -o StrictHostKeyChecking=no target/maven-web-application.war ec2-user@13.232.30.40:/opt/apache-tomcat-9.0.58/webapps/"} 
+
+ }
+ 
+ stage 
+ {
+     mail bcc: '', body: '''Build Over
+
+     Regards,
+     Venus Technologies,
+     9959971311.''', cc: '', from: '', replyTo: '', subject: 'Build Over', to: 'pasumarthisubhash.5@gmail.com'
+ }
+ 
+}
